@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Todo Steroid - Privacy First Todo App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --danger: #f56565;
+            --warning: #ed8936;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: backgroundMove 60s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .privacy-badge {
+            font-size: 12px;
+            background: var(--success);
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .glass-input {
+            flex: 1;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 20px;
+            color: var(--text);
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        .glass-button {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 25px;
+            color: var(--text);
+            font-size: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        .glass-button:active {
+            transform: translateY(0);
+        }
+
+        .todo-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .todo-item {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .todo-item.completed {
+            opacity: 0.7;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+
+        .todo-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--glass-border);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .todo-checkbox:hover {
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .todo-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .todo-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+        }
+
+        .todo-content {
+            flex: 1;
+        }
+
+        .todo-text {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .todo-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-button {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .icon-button:hover {
+            background: var(--glass);
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-select {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 10px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .recurring-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .preset-button {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 8px 15px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .preset-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .preset-button.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .notification-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--success);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            left: 27px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .stats {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-item {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
+            transition: all 0.3s ease;
+            font-size: 24px;
+        }
+
+        .floating-button:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .privacy-badge {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                Todo Steroid
+                <span class="privacy-badge">🔒 100% Private</span>
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 14px;">No tracking • No location • Offline first</p>
+        </div>
+
+        <div class="notification-toggle">
+            <span>Enable Notifications</span>
+            <div class="toggle-switch" id="notificationToggle"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalTasks">0</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="completedTasks">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="recurringTasks">0</div>
+                <div class="stat-label">Recurring</div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" class="glass-input" id="todoInput" placeholder="What needs to be done?">
+            <button class="glass-button" onclick="addTodo()">
+                <span>➕</span>
+                Add
+            </button>
+        </div>
+
+        <div class="todo-list" id="todoList">
+            <div class="empty-state">
+                <p>✨ No tasks yet. Add your first task!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-button" onclick="showRecurringModal()">
+        🔄
+    </div>
+
+    <!-- Recurring Task Modal -->
+    <div class="modal" id="recurringModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Recurring Task</h3>
+                <button class="icon-button" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Task Description</label>
+                    <input type="text" class="glass-input" id="recurringTaskInput" placeholder="Enter task description">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Repeat Every</label>
+                    <div class="recurring-options">
+                        <button class="preset-button" onclick="setRecurring('minute')">Every Minute</button>
+                        <button class="preset-button" onclick="setRecurring('hour')">Hourly</button>
+                        <button class="preset-button" onclick="setRecurring('day')">Daily</button>
+                        <button class="preset-button" onclick="setRecurring('week')">Weekly</button>
+                        <button class="preset-button" onclick="setRecurring('month')">Monthly</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Custom Interval</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" class="glass-input" id="customInterval" placeholder="Number" min="1" style="width: 100px;">
+                        <select class="form-select" id="customUnit">
+                            <option value="minute">Minutes</option>
+                            <option value="hour">Hours</option>
+                            <option value="day">Days</option>
+                            <option value="week">Weeks</option>
+                            <option value="month">Months</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Notification Time (seconds before due)</label>
+                    <input type="number" class="glass-input" id="notificationTime" value="60" min="30">
+                </div>
+            </div>
+            <button class="glass-button" style="width: 100%;" onclick="createRecurringTask()">
+                Create Recurring Task
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize app
+        let todos = [];
+        let notificationsEnabled = false;
+        let selectedRecurring = null;
+
+        // Load data from localStorage
+        function loadData() {
+            const savedTodos = localStorage.getItem('todoSteroidTodos');
+            if (savedTodos) {
+                todos = JSON.parse(savedTodos);
+            }
+            
+            const savedNotifications = localStorage.getItem('todoSteroidNotifications');
+            if (savedNotifications === 'true') {
+                notificationsEnabled = true;
+                document.getElementById('notificationToggle').classList.add('active');
+            }
+            
+            renderTodos();
+            updateStats();
+            checkRecurringTasks();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('todoSteroidTodos', JSON.stringify(todos));
+            localStorage.setItem('todoSteroidNotifications', notificationsEnabled.toString());
+        }
+
+        // Haptic feedback
+        function vibrate(pattern = [10]) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        // Add new todo
+        function addTodo(text = null, recurring = null) {
+            const input = document.getElementById('todoInput');
+            const todoText = text || input.value.trim();
+            
+            if (!todoText) return;
+            
+            vibrate();
+            
+            const todo = {
+                id: Date.now(),
+                text: todoText,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                recurring: recurring,
+                nextDue: recurring ? calculateNextDue(recurring) : null
+            };
+            
+            todos.unshift(todo);
+            
+            if (!text) {
+                input.value = '';
+                input.focus();
+            }
+            
+            saveData();
+            renderTodos();
+            updateStats();
+            
+            if (recurring && notificationsEnabled) {
+                scheduleNotification(todo);
+            }
+        }
+
+        // Calculate next due date for recurring tasks
+        function calculateNextDue(recurring) {
+            const now = new Date();
+            const { interval, unit } = recurring;
+            
+            switch(unit) {
+                case 'minute':
+                    now.setMinutes(now.getMinutes() + interval);
+                    break;
+                case 'hour':
+                    now.setHours(now.getHours() + interval);
+                    break;
+                case 'day':
+                    now.setDate(now.getDate() + interval);
+                    break;
+                case 'week':
+                    now.setDate(now.getDate() + (interval * 7));
+                    break;
+                case 'month':
+                    now.setMonth(now.getMonth() + interval);
+                    break;
+            }
+            
+            return now.toISOString();
+        }
+
+        // Toggle todo completion
+        function toggleTodo(id) {
+            vibrate([10, 50, 10]);
+            
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                
+                if (todo.completed && todo.recurring) {
+                    // Create new instance for recurring task
+                    const newTodo = {
+                        ...todo,
+                        id: Date.now(),
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        nextDue: calculateNextDue(todo.recurring)
+                    };
+                    todos.unshift(newTodo);
+                    
+                    if (notificationsEnabled) {
+                        scheduleNotification(newTodo);
+                    }
+                }
+                
+                saveData();
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        // Delete todo
+        function deleteTodo(id) {
+            vibrate([50]);
+            
+            todos = todos.filter(t => t.id !== id);
+            saveData();
+            renderTodos();
+            updateStats();
+        }
+
+        // Render todos
+        function renderTodos() {
+            const todoList = document.getElementById('todoList');
+            
+            if (todos.length === 0) {
+                todoList.innerHTML = `
+                    <div class="empty-state">
+                        <p>✨ No tasks yet. Add your first task!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            todoList.innerHTML = todos.map(todo => {
+                const createdDate = new Date(todo.createdAt);
+                const timeAgo = getTimeAgo(createdDate);
+                
+                return `
+                    <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                        <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodo(${todo.id})"></div>
+                        <div class="todo-content">
+                            <div class="todo-text">${escapeHtml(todo.text)}</div>
+                            <div class="todo-meta">
+                                <span>⏰ ${timeAgo}</span>
+                                ${todo.recurring ? `<span>🔄 ${formatRecurring(todo.recurring)}</span>` : ''}
+                                ${todo.nextDue ? `<span>📅 Next: ${formatDate(todo.nextDue)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="todo-actions">
+                            <button class="icon-button" onclick="deleteTodo(${todo.id})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalTasks').textContent = todos.length;
+            document.getElementById('completedTasks').textContent = todos.filter(t => t.completed).length;
+            document.getElementById('recurringTasks').textContent = todos.filter(t => t.recurring).length;
+        }
+
+        // Format recurring info
+        function formatRecurring(recurring) {
+            const { interval, unit } = recurring;
+            return `Every ${interval > 1 ? interval + ' ' : ''}${unit}${interval > 1 ? 's' : ''}`;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = date - now;
+            const diffMins = Math.round(diffMs / 60000);
+            
+            if (diffMins < 60) {
+                return `${diffMins} min`;
+            } else if (diffMins < 1440) {
+                return `${Math.round(diffMins / 60)} hours`;
+            } else {
+                return date.toLocaleDateString();
+            }
+        }
+
+        // Get time ago
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.round(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} min ago`;
+            if (diffMins < 1440) return `${Math.round(diffMins / 60)} hours ago`;
+            return `${Math.round(diffMins / 1440)} days ago`;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Toggle notifications
+        document.getElementById('notificationToggle').addEventListener('click', async function() {
+            vibrate();
+            
+            if (!notificationsEnabled) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    notificationsEnabled = true;
+                    this.classList.add('active');
+                    new Notification('Todo Steroid', {
+                        body: 'Notifications enabled! You\'ll be reminded of your tasks.',
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✅</text></svg>'
+                    });
+                }
+            } else {
+                notificationsEnabled = false;
+                this.classList.remove('active');
+            }
+            
+            saveData();
+        });
+
+        // Schedule notification
+        function scheduleNotification(todo) {
+            if (!notificationsEnabled || !todo.nextDue) return;
+            
+            const notificationTime = parseInt(document.getElementById('notificationTime')?.value || 60) * 1000;
+            const dueDate = new Date(todo.nextDue);
+            const notifyAt = dueDate.getTime() - notificationTime;
+            const now = Date.now();
+            
+            if (notifyAt > now) {
+                setTimeout(() => {
+                    new Notification('Todo Reminder', {
+                        body: `📌 ${todo.text}`,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📌</text></svg>',
+                        requireInteraction: true,
+                        vibrate: [200, 100, 200]
+                    });
+                }, notifyAt - now);
+            }
+        }
+
+        // Check and reschedule recurring tasks
+        function checkRecurringTasks() {
+            todos.forEach(todo => {
+                if (todo.recurring && todo.nextDue) {
+                    const dueDate = new Date(todo.nextDue);
+                    if (dueDate <= new Date() && !todo.completed) {
+                        if (notificationsEnabled) {
+                            new Notification('Overdue Task', {
+                                body: `⚠️ ${todo.text}`,
+                                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>',
+                                requireInteraction: true
+                            });
+                        }
+                    } else if (notificationsEnabled) {
+                        scheduleNotification(todo);
+                    }
+                }
+            });
+        }
+
+        // Modal functions
+        function showRecurringModal() {
+            vibrate();
+            document.getElementById('recurringModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            vibrate();
+            document.getElementById('recurringModal').style.display = 'none';
+            document.getElementById('recurringTaskInput').value = '';
+            document.getElementById('customInterval').value = '';
+            selectedRecurring = null;
+            document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
+        }
+
+        function setRecurring(type) {
+            vibrate();
+            
+            document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            switch(type) {
+                case 'minute':
+                    selectedRecurring = { interval: 1, unit: 'minute' };
+                    break;
+                case 'hour':
+                    selectedRecurring = { interval: 1, unit: 'hour' };
+                    break;
+                case 'day':
+                    selectedRecurring = { interval: 1, unit: 'day' };
+                    break;
+                case 'week':
+                    selectedRecurring = { interval: 1, unit: 'week' };
+                    break;
+                case 'month':
+                    selectedRecurring = { interval: 1, unit: 'month' };
+                    break;
+            }
+        }
+
+        function createRecurringTask() {
+            const taskInput = document.getElementById('recurringTaskInput');
+            const customInterval = document.getElementById('customInterval');
+            const customUnit = document.getElementById('customUnit');
+            const notificationTime = document.getElementById('notificationTime');
+            
+            const taskText = taskInput.value.trim();
+            if (!taskText) {
+                vibrate([100, 50, 100]);
+                return;
+            }
+            
+            let recurring = selectedRecurring;
+            
+            if (customInterval.value) {
+                recurring = {
+                    interval: parseInt(customInterval.value),
+                    unit: customUnit.value,
+                    notificationTime: parseInt(notificationTime.value)
+                };
+            }
+            
+            if (!recurring) {
+                vibrate([100, 50, 100]);
+                return;
+            }
+            
+            vibrate([50, 50, 50]);
+            addTodo(taskText, recurring);
+            closeModal();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.activeElement.id === 'todoInput') {
+                addTodo();
+            }
+            
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Click outside modal to close
+        document.getElementById('recurringModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Service worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript,' + encodeURIComponent(`
+                self.addEventListener('install', e => {
+                    self.skipWaiting();
+                });
+                
+                self.addEventListener('activate', e => {
+                    e.waitUntil(clients.claim());
+                });
+                
+                self.addEventListener('fetch', e => {
+                    e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
+                });
+            `));
+        }
+
+        // Initialize app
+        loadData();
+        
+        // Check recurring tasks every minute
+        setInterval(checkRecurringTasks, 60000);
+    </script>
+</body>
+</html>

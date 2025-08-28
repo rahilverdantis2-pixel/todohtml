@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a2e">
     <title>TaskFlow - Privacy-First Task Manager</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRhc2tGbG93IC0gUHJpdmFjeS1GaXJzdCBUYXNrIE1hbmFnZXIiLAogICJzaG9ydF9uYW1lIjogIlRhc2tGbG93IiwKICAiZGVzY3JpcHRpb24iOiAiQSBwcml2YWN5LWZvY3VzZWQsIG9mZmxpbmUgdGFzayBtYW5hZ2VtZW50IGFwcCB3aXRoIGFkdmFuY2VkIHJlY3VycmluZyB0YXNrcyIsCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYwZjIzIiwKICAidGhlbWVfY29sb3IiOiAiIzY2N2VlYSIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0Igp9">
     <style>
         :root {
             --primary: #667eea;
@@ -101,6 +101,60 @@
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        /* Quick Add Bar */
+        .quick-add-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .quick-add-input {
+            width: 100%;
+            padding: 16px 50px 16px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .quick-add-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .quick-add-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quick-add-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .quick-add-btn:active {
+            transform: translateY(-50%) scale(0.95);
         }
 
         /* FAB Button */
@@ -884,6 +938,23 @@
             margin-top: 16px;
         }
 
+        /* Subtask input group */
+        .subtask-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .subtask-input-group input {
+            flex: 1;
+        }
+
+        .subtask-input-group button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
         /* Accessibility */
         .sr-only {
             position: absolute;
@@ -941,6 +1012,16 @@
             </button>
         </header>
 
+        <div class="quick-add-container">
+            <input type="text" 
+                   class="quick-add-input" 
+                   id="quickAddInput" 
+                   placeholder="Quick add task... (Press Enter)">
+            <button class="quick-add-btn" id="quickAddBtn" aria-label="Quick add task">
+                <span>+</span>
+            </button>
+        </div>
+
         <div class="search-bar">
             <span class="search-icon">🔍</span>
             <input type="text" class="search-input" id="searchInput" placeholder="Search tasks...">
@@ -973,7 +1054,7 @@
             <div class="empty-state">
                 <div class="empty-state-icon">📝</div>
                 <div class="empty-state-title">No tasks yet</div>
-                <div class="empty-state-message">Tap the + button to create your first task</div>
+                <div class="empty-state-message">Type in the quick add box above or tap the + button</div>
             </div>
         </div>
     </div>
@@ -1193,6 +1274,47 @@
     </div>
 
     <script>
+        // Service Worker Registration (inline)
+        if ('serviceWorker' in navigator) {
+            const swContent = `
+const CACHE_NAME = 'taskflow-v1';
+const urlsToCache = ['/'];
+
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(urlsToCache))
+    );
+    self.skipWaiting();
+});
+
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => response || fetch(event.request))
+    );
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    self.clients.claim();
+});`;
+
+            const blob = new Blob([swContent], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl);
+        }
+
         // App State
         const app = {
             tasks: [],
@@ -1218,6 +1340,8 @@
         const enableRecurrence = document.getElementById('enableRecurrence');
         const recurrenceOptions = document.getElementById('recurrenceOptions');
         const pullToRefresh = document.getElementById('pullToRefresh');
+        const quickAddInput = document.getElementById('quickAddInput');
+        const quickAddBtn = document.getElementById('quickAddBtn');
 
         // Initialize App
         function init() {
@@ -1235,10 +1359,23 @@
                 document.getElementById('themeIcon').textContent = '☀️';
                 document.getElementById('themeText').textContent = 'Light';
             }
+            
+            // Apply saved settings
+            document.getElementById('focusMode').checked = app.settings.focusMode;
+            document.getElementById('enableNotifications').checked = app.settings.notifications;
+            document.getElementById('hapticFeedback').checked = app.settings.hapticFeedback;
+            
+            if (app.settings.focusMode) {
+                document.body.classList.add('focus-mode');
+            }
         }
 
         // Event Listeners
         function setupEventListeners() {
+            // Quick Add
+            quickAddInput.addEventListener('keypress', handleQuickAddEnter);
+            quickAddBtn.addEventListener('click', handleQuickAdd);
+            
             // Task Form
             taskForm.addEventListener('submit', handleTaskSubmit);
             addTaskBtn.addEventListener('click', () => openTaskModal());
@@ -1293,6 +1430,42 @@
             document.addEventListener('keydown', handleKeyboardShortcuts);
         }
 
+        // Quick Add Feature
+        function handleQuickAddEnter(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleQuickAdd();
+            }
+        }
+
+        function handleQuickAdd() {
+            const title = quickAddInput.value.trim();
+            if (!title) return;
+            
+            const quickTask = {
+                id: generateId(),
+                title: title,
+                description: '',
+                category: 'personal',
+                priority: 'medium',
+                dueDate: '',
+                completed: false,
+                createdAt: new Date().toISOString(),
+                subtasks: []
+            };
+            
+            app.tasks.push(quickTask);
+            saveData();
+            renderTasks();
+            updateStats();
+            quickAddInput.value = '';
+            showNotification('Task added!', 'success');
+            
+            if (app.settings.hapticFeedback && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
         // Task Management
         function handleTaskSubmit(e) {
             e.preventDefault();
@@ -1314,7 +1487,7 @@
             // Handle recurrence
             if (enableRecurrence.checked) {
                 const activePreset = document.querySelector('.preset-btn.active');
-                taskData.recurrence = {
+                const recurrenceData = {
                     enabled: true,
                     pattern: activePreset ? activePreset.dataset.preset : 'custom',
                     interval: parseInt(document.getElementById('recurrenceInterval').value),
@@ -1324,6 +1497,14 @@
                     endOn: document.getElementById('endOnDate').value,
                     weekdays: getSelectedWeekdays()
                 };
+                
+                // Store the actual values, not just the pattern
+                if (activePreset && activePreset.dataset.preset === 'custom') {
+                    recurrenceData.customInterval = recurrenceData.interval;
+                    recurrenceData.customUnit = recurrenceData.unit;
+                }
+                
+                taskData.recurrence = recurrenceData;
             }
             
             if (app.currentTaskId) {
@@ -1409,7 +1590,7 @@
                         <div class="empty-state-icon">📝</div>
                         <div class="empty-state-title">No tasks found</div>
                         <div class="empty-state-message">
-                            ${app.currentFilter === 'all' ? 'Tap the + button to create your first task' : 'Try changing the filter'}
+                            ${app.currentFilter === 'all' ? 'Type in the quick add box above or tap the + button' : 'Try changing the filter'}
                         </div>
                     </div>
                 `;
@@ -1557,6 +1738,28 @@
                         if (presetBtn) {
                             document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
                             presetBtn.classList.add('active');
+                            
+                            // If custom, show advanced options and set values
+                            if (task.recurrence.pattern === 'custom') {
+                                document.getElementById('advancedRecurrence').style.display = 'block';
+                                document.getElementById('recurrenceInterval').value = task.recurrence.interval || 1;
+                                document.getElementById('recurrenceUnit').value = task.recurrence.unit || 'days';
+                                
+                                // Show weekday selector if unit is weeks
+                                if (task.recurrence.unit === 'weeks') {
+                                    document.getElementById('weekdaySelector').style.display = 'block';
+                                }
+                            }
+                        }
+                        
+                        // Set end conditions
+                        document.getElementById('recurrenceEnd').value = task.recurrence.endType || 'never';
+                        if (task.recurrence.endType === 'after') {
+                            document.getElementById('endAfterGroup').style.display = 'block';
+                            document.getElementById('endAfterOccurrences').value = task.recurrence.endAfter || 10;
+                        } else if (task.recurrence.endType === 'on') {
+                            document.getElementById('endOnGroup').style.display = 'block';
+                            document.getElementById('endOnDate').value = task.recurrence.endOn || '';
                         }
                     }
                     
@@ -1565,10 +1768,17 @@
                         const subtasksList = document.getElementById('subtasksList');
                         subtasksList.innerHTML = task.subtasks.map((subtask, index) => `
                             <div class="form-group subtask-input-group">
-                                <input type="text" class="form-input" value="${escapeHtml(subtask.title)}" placeholder="Subtask ${index + 1}">
+                                <input type="text" class="form-input subtask-input" value="${escapeHtml(subtask.title)}" placeholder="Subtask ${index + 1}">
                                 <button type="button" class="btn btn-secondary" onclick="removeSubtask(this)">Remove</button>
                             </div>
                         `).join('');
+                        
+                        // Add enter key listeners to existing subtasks
+                        setTimeout(() => {
+                            document.querySelectorAll('.subtask-input').forEach(input => {
+                                input.addEventListener('keypress', handleSubtaskEnter);
+                            });
+                        }, 0);
                     }
                 }
             } else {
@@ -1578,6 +1788,10 @@
                 document.getElementById('subtasksList').innerHTML = '';
                 enableRecurrence.checked = false;
                 recurrenceOptions.classList.remove('active');
+                document.getElementById('advancedRecurrence').style.display = 'none';
+                document.getElementById('weekdaySelector').style.display = 'none';
+                document.getElementById('endAfterGroup').style.display = 'none';
+                document.getElementById('endOnGroup').style.display = 'none';
             }
             
             taskModal.classList.add('active');
@@ -1744,6 +1958,11 @@
             }
         }
 
+        function scheduleNextOccurrence(task) {
+            // This function can be enhanced to schedule notifications for recurring tasks
+            console.log('Scheduling next occurrence for task:', task.title);
+        }
+
         // Subtasks
         function addSubtask() {
             const subtasksList = document.getElementById('subtasksList');
@@ -1752,15 +1971,45 @@
             const subtaskGroup = document.createElement('div');
             subtaskGroup.className = 'form-group subtask-input-group';
             subtaskGroup.innerHTML = `
-                <input type="text" class="form-input" placeholder="Subtask ${subtaskIndex}">
+                <input type="text" class="form-input subtask-input" placeholder="Subtask ${subtaskIndex}">
                 <button type="button" class="btn btn-secondary" onclick="removeSubtask(this)">Remove</button>
             `;
             
             subtasksList.appendChild(subtaskGroup);
+            
+            // Focus on the new input
+            const newInput = subtaskGroup.querySelector('input');
+            newInput.focus();
+            
+            // Add enter key listener
+            newInput.addEventListener('keypress', handleSubtaskEnter);
+        }
+
+        function handleSubtaskEnter(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const currentInput = e.target;
+                const allInputs = Array.from(document.querySelectorAll('.subtask-input'));
+                const currentIndex = allInputs.indexOf(currentInput);
+                
+                // If this is the last input and it has content, add a new subtask
+                if (currentIndex === allInputs.length - 1 && currentInput.value.trim()) {
+                    addSubtask();
+                } else if (currentIndex < allInputs.length - 1) {
+                    // Focus on the next input
+                    allInputs[currentIndex + 1].focus();
+                }
+            }
         }
 
         function removeSubtask(button) {
             button.parentElement.remove();
+            
+            // Update placeholders
+            const subtaskInputs = document.querySelectorAll('.subtask-input');
+            subtaskInputs.forEach((input, index) => {
+                input.placeholder = `Subtask ${index + 1}`;
+            });
         }
 
         function getSubtasks() {
@@ -1854,8 +2103,8 @@
             upcoming.forEach(task => {
                 const notification = new Notification('Task Due Soon!', {
                     body: task.title,
-                    icon: '/icon-192.png',
-                    badge: '/icon-192.png',
+                    icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                    badge: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
                     tag: task.id,
                     requireInteraction: true,
                     actions: [
@@ -2193,15 +2442,6 @@
 
         // Initialize the app
         init();
-
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(registration => {
-                console.log('ServiceWorker registered:', registration);
-            }).catch(error => {
-                console.error('ServiceWorker registration failed:', error);
-            });
-        }
     </script>
 </body>
 </html>

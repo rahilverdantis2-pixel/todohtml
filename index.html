@@ -2,438 +2,769 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a2e">
-    <title>Todo Steroid - Privacy First Todo App</title>
+    <title>TaskFlow - Privacy-First Task Manager</title>
+    <link rel="manifest" href="manifest.json">
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #48bb78;
+            --danger: #f56565;
+            --warning: #ed8936;
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --blur: blur(10px);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f7fafc;
+            --bg-secondary: #edf2f7;
+            --bg-card: rgba(0, 0, 0, 0.05);
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --success: #48bb78;
-            --danger: #f56565;
-            --warning: #ed8936;
-            --glass: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --text: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.8);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: var(--text);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
             position: relative;
+            min-height: 100vh;
         }
 
         body::before {
             content: '';
             position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: backgroundMove 60s linear infinite;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0.1;
             z-index: -1;
         }
 
-        @keyframes backgroundMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
         .container {
-            max-width: 500px;
+            max-width: 768px;
             margin: 0 auto;
             padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            padding-bottom: 80px;
         }
 
-        .header {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        /* Glassmorphism Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-radius: 16px;
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* FAB Button */
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .privacy-badge {
-            font-size: 12px;
-            background: var(--success);
-            padding: 4px 8px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .glass-input {
-            flex: 1;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 15px 20px;
-            color: var(--text);
-            font-size: 16px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        .glass-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
-        }
-
-        .glass-button {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 15px 25px;
-            color: var(--text);
-            font-size: 16px;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            z-index: 1000;
+            border: none;
+            color: white;
+            font-size: 24px;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-top: 1px solid var(--glass-border);
             display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .glass-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
-        }
-
-        .glass-button:active {
-            transform: translateY(0);
-        }
-
-        .todo-list {
-            flex: 1;
-            overflow-y: auto;
+            justify-content: space-around;
             padding: 10px 0;
+            z-index: 999;
         }
 
-        .todo-item {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 10px;
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 12px;
+        }
+
+        /* Task Item */
+        .task-item {
             display: flex;
             align-items: center;
-            gap: 15px;
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .todo-item.completed {
-            opacity: 0.7;
-        }
-
-        .todo-item.completed .todo-text {
-            text-decoration: line-through;
-            color: var(--text-secondary);
-        }
-
-        .todo-checkbox {
+        .task-checkbox {
             width: 24px;
             height: 24px;
-            border: 2px solid var(--glass-border);
+            border: 2px solid var(--primary);
             border-radius: 50%;
+            margin-right: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
             flex-shrink: 0;
             position: relative;
         }
 
-        .todo-checkbox:hover {
-            border-color: var(--primary);
-            transform: scale(1.1);
+        .task-checkbox.checked {
+            background: var(--primary);
         }
 
-        .todo-checkbox.checked {
-            background: var(--success);
-            border-color: var(--success);
-        }
-
-        .todo-checkbox.checked::after {
+        .task-checkbox.checked::after {
             content: '✓';
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-weight: bold;
-        }
-
-        .todo-content {
-            flex: 1;
-        }
-
-        .todo-text {
             font-size: 16px;
-            margin-bottom: 5px;
         }
 
-        .todo-meta {
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .todo-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .icon-button {
-            background: transparent;
-            border: none;
-            color: var(--text);
+        .task-content {
+            flex: 1;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 10px;
+        }
+
+        .task-title {
+            font-size: 16px;
+            margin-bottom: 4px;
             transition: all 0.3s ease;
-            font-size: 18px;
         }
 
-        .icon-button:hover {
-            background: var(--glass);
-            transform: scale(1.1);
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            opacity: 0.6;
         }
 
+        .task-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .task-priority {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .priority-high {
+            background: rgba(245, 101, 101, 0.2);
+            color: #f56565;
+        }
+
+        .priority-medium {
+            background: rgba(237, 137, 54, 0.2);
+            color: #ed8936;
+        }
+
+        .priority-low {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+        }
+
+        /* Modal */
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .modal.active {
+            display: flex;
         }
 
         .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            background: var(--bg-secondary);
             border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
         }
 
         .modal-header {
-            font-size: 20px;
-            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .modal-body {
             margin-bottom: 20px;
         }
 
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        /* Form Elements */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
             color: var(--text-secondary);
         }
 
-        .form-select {
+        .form-input,
+        .form-select,
+        .form-textarea {
             width: 100%;
-            background: var(--glass);
+            padding: 12px 16px;
+            background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 10px;
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        .recurring-options {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .preset-button {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 8px 15px;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 12px;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
             transition: all 0.3s ease;
         }
 
-        .preset-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
         }
 
-        .preset-button.active {
-            background: var(--primary);
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--glass-bg);
+            transition: .4s;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
             border-color: var(--primary);
         }
 
-        .notification-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+            background-color: white;
         }
 
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 26px;
-            background: var(--glass);
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
             border: 1px solid var(--glass-border);
-            border-radius: 13px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            min-width: 300px;
+            box-shadow: var(--shadow);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .notification-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .notification-body {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .notification-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .toggle-switch.active {
-            background: var(--success);
-        }
-
-        .toggle-switch::after {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
             width: 20px;
             height: 20px;
-            background: white;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            transition: all 0.3s ease;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
         }
 
-        .toggle-switch.active::after {
-            left: 27px;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
             color: var(--text-secondary);
         }
 
-        .stats {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .empty-state-message {
+            font-size: 16px;
+        }
+
+        /* Recurring Task Options */
+        .recurrence-options {
+            display: none;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--glass-bg);
+            border-radius: 12px;
             border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-around;
+        }
+
+        .recurrence-options.active {
+            display: block;
+        }
+
+        .recurrence-preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .preset-btn {
+            padding: 8px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            color: var(--text-primary);
             text-align: center;
         }
 
-        .stat-item {
-            flex: 1;
+        .preset-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--primary);
+        }
+
+        .preset-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        /* Stats Card */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
         }
 
         .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
         }
 
         .stat-label {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-secondary);
         }
 
-        .floating-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
+        /* Swipe Actions */
+        .swipe-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .task-item.swiped .swipe-actions {
+            transform: translateX(0);
+        }
+
+        .swipe-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .swipe-edit {
             background: var(--primary);
+            color: white;
+        }
+
+        .swipe-delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-item {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Pull to Refresh */
+        .pull-to-refresh {
+            position: fixed;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
+            transition: top 0.3s ease;
+            z-index: 999;
+        }
+
+        .pull-to-refresh.pulling {
+            top: 20px;
+        }
+
+        .pull-to-refresh.refreshing {
+            top: 20px;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 48px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
             transition: all 0.3s ease;
-            font-size: 24px;
         }
 
-        .floating-button:hover {
-            transform: scale(1.1) rotate(90deg);
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 20px;
         }
 
-        @media (max-width: 600px) {
+        /* Filter Pills */
+        .filter-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 0;
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-pill {
+            padding: 8px 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .filter-pill:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--primary);
+        }
+
+        .filter-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
             .container {
                 padding: 10px;
             }
@@ -442,506 +773,1435 @@
                 font-size: 24px;
             }
             
-            .privacy-badge {
-                font-size: 10px;
+            .modal-content {
+                padding: 16px;
+            }
+            
+            .notification {
+                min-width: 280px;
+                right: 10px;
+                left: 10px;
+                transform: translateY(-100px);
+            }
+            
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+
+        /* Focus Mode */
+        body.focus-mode .task-item.completed {
+            display: none;
+        }
+
+        /* Subtasks */
+        .subtasks-container {
+            margin-left: 40px;
+            margin-top: 12px;
+        }
+
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .subtask-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .subtask-checkbox.checked {
+            background: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .subtask-checkbox.checked::after {
+            content: '✓';
+            display: block;
+            text-align: center;
+            line-height: 14px;
+            color: white;
+            font-size: 12px;
+        }
+
+        /* Advanced Recurrence */
+        .advanced-recurrence {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .weekday-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .weekday-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+        }
+
+        .weekday-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Export/Import */
+        .backup-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--glass-bg);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Focus styles */
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .glass-card {
+                border-width: 2px;
+            }
+            
+            .btn {
+                border: 2px solid currentColor;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
 </head>
 <body>
+    <div class="pull-to-refresh" id="pullToRefresh">
+        <span class="spinner"></span>
+    </div>
+
     <div class="container">
-        <div class="header">
-            <h1>
-                Todo Steroid
-                <span class="privacy-badge">🔒 100% Private</span>
-            </h1>
-            <p style="color: var(--text-secondary); font-size: 14px;">No tracking • No location • Offline first</p>
+        <header class="header">
+            <h1>TaskFlow</h1>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <span id="themeIcon">🌙</span>
+                <span id="themeText">Dark</span>
+            </button>
+        </header>
+
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search tasks...">
         </div>
 
-        <div class="notification-toggle">
-            <span>Enable Notifications</span>
-            <div class="toggle-switch" id="notificationToggle"></div>
+        <div class="filter-container" id="filterContainer">
+            <button class="filter-pill active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="today">Today</button>
+            <button class="filter-pill" data-filter="upcoming">Upcoming</button>
+            <button class="filter-pill" data-filter="completed">Completed</button>
+            <button class="filter-pill" data-filter="high">High Priority</button>
         </div>
 
-        <div class="stats">
-            <div class="stat-item">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
                 <div class="stat-value" id="totalTasks">0</div>
                 <div class="stat-label">Total Tasks</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="completedTasks">0</div>
-                <div class="stat-label">Completed</div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedToday">0</div>
+                <div class="stat-label">Completed Today</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="recurringTasks">0</div>
-                <div class="stat-label">Recurring</div>
+            <div class="stat-card">
+                <div class="stat-value" id="streakDays">0</div>
+                <div class="stat-label">Day Streak</div>
             </div>
         </div>
 
-        <div class="input-group">
-            <input type="text" class="glass-input" id="todoInput" placeholder="What needs to be done?">
-            <button class="glass-button" onclick="addTodo()">
-                <span>➕</span>
-                Add
-            </button>
-        </div>
-
-        <div class="todo-list" id="todoList">
+        <div id="taskList">
             <div class="empty-state">
-                <p>✨ No tasks yet. Add your first task!</p>
+                <div class="empty-state-icon">📝</div>
+                <div class="empty-state-title">No tasks yet</div>
+                <div class="empty-state-message">Tap the + button to create your first task</div>
             </div>
         </div>
     </div>
 
-    <div class="floating-button" onclick="showRecurringModal()">
-        🔄
-    </div>
+    <button class="fab" id="addTaskBtn" aria-label="Add new task">
+        <span>+</span>
+    </button>
 
-    <!-- Recurring Task Modal -->
-    <div class="modal" id="recurringModal">
+    <nav class="bottom-nav">
+        <div class="nav-item active" data-page="tasks">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Tasks</span>
+        </div>
+        <div class="nav-item" data-page="calendar">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Calendar</span>
+        </div>
+        <div class="nav-item" data-page="stats">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Stats</span>
+        </div>
+        <div class="nav-item" data-page="settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+        </div>
+    </nav>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Create Recurring Task</h3>
-                <button class="icon-button" onclick="closeModal()">✕</button>
+                <h2 class="modal-title" id="modalTitle">New Task</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
             </div>
-            <div class="modal-body">
+
+            <form id="taskForm">
                 <div class="form-group">
-                    <label class="form-label">Task Description</label>
-                    <input type="text" class="glass-input" id="recurringTaskInput" placeholder="Enter task description">
+                    <label class="form-label" for="taskTitle">Title</label>
+                    <input type="text" class="form-input" id="taskTitle" required placeholder="Enter task title">
                 </div>
-                
+
                 <div class="form-group">
-                    <label class="form-label">Repeat Every</label>
-                    <div class="recurring-options">
-                        <button class="preset-button" onclick="setRecurring('minute')">Every Minute</button>
-                        <button class="preset-button" onclick="setRecurring('hour')">Hourly</button>
-                        <button class="preset-button" onclick="setRecurring('day')">Daily</button>
-                        <button class="preset-button" onclick="setRecurring('week')">Weekly</button>
-                        <button class="preset-button" onclick="setRecurring('month')">Monthly</button>
+                    <label class="form-label" for="taskDescription">Description</label>
+                    <textarea class="form-textarea" id="taskDescription" placeholder="Add task details..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskCategory">Category</label>
+                    <select class="form-select" id="taskCategory">
+                        <option value="personal">Personal</option>
+                        <option value="work">Work</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="health">Health</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskPriority">Priority</label>
+                    <select class="form-select" id="taskPriority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="taskDueDate">Due Date</label>
+                    <input type="datetime-local" class="form-input" id="taskDueDate">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="enableRecurrence">
+                        Enable Recurring Task
+                    </label>
+                </div>
+
+                <div class="recurrence-options" id="recurrenceOptions">
+                    <h3 style="margin-bottom: 12px;">Recurrence Pattern</h3>
+                    
+                    <div class="recurrence-preset-grid">
+                        <button type="button" class="preset-btn" data-preset="daily">Daily</button>
+                        <button type="button" class="preset-btn" data-preset="weekly">Weekly</button>
+                        <button type="button" class="preset-btn" data-preset="monthly">Monthly</button>
+                        <button type="button" class="preset-btn" data-preset="yearly">Yearly</button>
+                        <button type="button" class="preset-btn" data-preset="weekdays">Weekdays</button>
+                        <button type="button" class="preset-btn" data-preset="custom">Custom</button>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Custom Interval</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="number" class="glass-input" id="customInterval" placeholder="Number" min="1" style="width: 100px;">
-                        <select class="form-select" id="customUnit">
-                            <option value="minute">Minutes</option>
-                            <option value="hour">Hours</option>
-                            <option value="day">Days</option>
-                            <option value="week">Weeks</option>
-                            <option value="month">Months</option>
+
+                    <div class="advanced-recurrence" id="advancedRecurrence" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Repeat every</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="number" class="form-input" id="recurrenceInterval" min="1" value="1" style="width: 80px;">
+                                <select class="form-select" id="recurrenceUnit">
+                                    <option value="minutes">Minutes</option>
+                                    <option value="hours">Hours</option>
+                                    <option value="days" selected>Days</option>
+                                    <option value="weeks">Weeks</option>
+                                    <option value="months">Months</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="weekdaySelector" style="display: none;">
+                            <label class="form-label">On these days</label>
+                            <div class="weekday-selector">
+                                <button type="button" class="weekday-btn" data-day="0">S</button>
+                                <button type="button" class="weekday-btn" data-day="1">M</button>
+                                <button type="button" class="weekday-btn" data-day="2">T</button>
+                                <button type="button" class="weekday-btn" data-day="3">W</button>
+                                <button type="button" class="weekday-btn" data-day="4">T</button>
+                                <button type="button" class="weekday-btn" data-day="5">F</button>
+                                <button type="button" class="weekday-btn" data-day="6">S</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">End recurrence</label>
+                        <select class="form-select" id="recurrenceEnd">
+                            <option value="never">Never</option>
+                            <option value="after">After occurrences</option>
+                            <option value="on">On date</option>
                         </select>
                     </div>
+
+                    <div class="form-group" id="endAfterGroup" style="display: none;">
+                        <label class="form-label">Number of occurrences</label>
+                        <input type="number" class="form-input" id="endAfterOccurrences" min="1" value="10">
+                    </div>
+
+                    <div class="form-group" id="endOnGroup" style="display: none;">
+                        <label class="form-label">End date</label>
+                        <input type="date" class="form-input" id="endOnDate">
+                    </div>
                 </div>
-                
+
                 <div class="form-group">
-                    <label class="form-label">Notification Time (seconds before due)</label>
-                    <input type="number" class="glass-input" id="notificationTime" value="60" min="30">
+                    <label class="form-label">Subtasks</label>
+                    <div id="subtasksList"></div>
+                    <button type="button" class="btn btn-secondary" id="addSubtaskBtn" style="margin-top: 8px;">
+                        <span>+</span>
+                        Add Subtask
+                    </button>
                 </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <span id="submitBtnText">Create Task</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+                <button class="close-btn" id="closeSettings">&times;</button>
             </div>
-            <button class="glass-button" style="width: 100%;" onclick="createRecurringTask()">
-                Create Recurring Task
-            </button>
+
+            <div class="form-group">
+                <label class="form-label">Focus Mode</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="focusMode">
+                    <span class="toggle-slider"></span>
+                </label>
+                <p style="margin-top: 8px; font-size: 14px; color: var(--text-secondary);">Hide completed tasks</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notifications</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="enableNotifications">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Haptic Feedback</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="hapticFeedback" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="backup-section">
+                <h3 style="margin-bottom: 12px;">Backup & Restore</h3>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Export your tasks to a JSON file or restore from a backup.
+                </p>
+                <div class="backup-actions">
+                    <button class="btn btn-primary" id="exportBtn">
+                        <span>📤</span>
+                        Export Data
+                    </button>
+                    <button class="btn btn-secondary" id="importBtn">
+                        <span>📥</span>
+                        Import Data
+                    </button>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+
+            <div class="form-group" style="margin-top: 24px;">
+                <button class="btn btn-secondary" id="clearDataBtn" style="width: 100%; background: var(--danger); color: white;">
+                    <span>🗑️</span>
+                    Clear All Data
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Initialize app
-        let todos = [];
-        let notificationsEnabled = false;
-        let selectedRecurring = null;
+        // App State
+        const app = {
+            tasks: [],
+            currentFilter: 'all',
+            currentTaskId: null,
+            settings: {
+                theme: 'dark',
+                focusMode: false,
+                notifications: false,
+                hapticFeedback: true
+            }
+        };
 
-        // Load data from localStorage
-        function loadData() {
-            const savedTodos = localStorage.getItem('todoSteroidTodos');
-            if (savedTodos) {
-                todos = JSON.parse(savedTodos);
-            }
-            
-            const savedNotifications = localStorage.getItem('todoSteroidNotifications');
-            if (savedNotifications === 'true') {
-                notificationsEnabled = true;
-                document.getElementById('notificationToggle').classList.add('active');
-            }
-            
-            renderTodos();
+        // DOM Elements
+        const taskList = document.getElementById('taskList');
+        const taskModal = document.getElementById('taskModal');
+        const settingsModal = document.getElementById('settingsModal');
+        const taskForm = document.getElementById('taskForm');
+        const searchInput = document.getElementById('searchInput');
+        const themeToggle = document.getElementById('themeToggle');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const filterContainer = document.getElementById('filterContainer');
+        const enableRecurrence = document.getElementById('enableRecurrence');
+        const recurrenceOptions = document.getElementById('recurrenceOptions');
+        const pullToRefresh = document.getElementById('pullToRefresh');
+
+        // Initialize App
+        function init() {
+            loadData();
+            setupEventListeners();
+            renderTasks();
             updateStats();
-            checkRecurringTasks();
-        }
-
-        // Save data to localStorage
-        function saveData() {
-            localStorage.setItem('todoSteroidTodos', JSON.stringify(todos));
-            localStorage.setItem('todoSteroidNotifications', notificationsEnabled.toString());
-        }
-
-        // Haptic feedback
-        function vibrate(pattern = [10]) {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(pattern);
+            setupNotifications();
+            setupPullToRefresh();
+            checkDueTasks();
+            
+            // Apply saved theme
+            if (app.settings.theme === 'light') {
+                document.body.setAttribute('data-theme', 'light');
+                document.getElementById('themeIcon').textContent = '☀️';
+                document.getElementById('themeText').textContent = 'Light';
             }
         }
 
-        // Add new todo
-        function addTodo(text = null, recurring = null) {
-            const input = document.getElementById('todoInput');
-            const todoText = text || input.value.trim();
+        // Event Listeners
+        function setupEventListeners() {
+            // Task Form
+            taskForm.addEventListener('submit', handleTaskSubmit);
+            addTaskBtn.addEventListener('click', () => openTaskModal());
+            document.getElementById('closeModal').addEventListener('click', closeTaskModal);
+            document.getElementById('cancelBtn').addEventListener('click', closeTaskModal);
             
-            if (!todoText) return;
+            // Settings
+            document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
+            themeToggle.addEventListener('click', toggleTheme);
+            document.getElementById('focusMode').addEventListener('change', toggleFocusMode);
+            document.getElementById('enableNotifications').addEventListener('change', toggleNotifications);
+            document.getElementById('hapticFeedback').addEventListener('change', toggleHapticFeedback);
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+            document.getElementById('importFile').addEventListener('change', importData);
+            document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
             
-            vibrate();
+            // Search and Filter
+            searchInput.addEventListener('input', debounce(handleSearch, 300));
+            filterContainer.addEventListener('click', handleFilterClick);
             
-            const todo = {
-                id: Date.now(),
-                text: todoText,
+            // Bottom Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', handleNavigation);
+            });
+            
+            // Recurrence
+            enableRecurrence.addEventListener('change', toggleRecurrence);
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', handleRecurrencePreset);
+            });
+            document.getElementById('recurrenceEnd').addEventListener('change', handleRecurrenceEndChange);
+            document.getElementById('recurrenceUnit').addEventListener('change', handleRecurrenceUnitChange);
+            
+            // Weekday Selector
+            document.querySelectorAll('.weekday-btn').forEach(btn => {
+                btn.addEventListener('click', toggleWeekday);
+            });
+            
+            // Subtasks
+            document.getElementById('addSubtaskBtn').addEventListener('click', addSubtask);
+            
+            // Modal backdrop click
+            taskModal.addEventListener('click', (e) => {
+                if (e.target === taskModal) closeTaskModal();
+            });
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) closeSettingsModal();
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+        }
+
+        // Task Management
+        function handleTaskSubmit(e) {
+            e.preventDefault();
+            
+            const taskData = {
+                id: app.currentTaskId || generateId(),
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                category: document.getElementById('taskCategory').value,
+                priority: document.getElementById('taskPriority').value,
+                dueDate: document.getElementById('taskDueDate').value,
                 completed: false,
-                createdAt: new Date().toISOString(),
-                recurring: recurring,
-                nextDue: recurring ? calculateNextDue(recurring) : null
+                createdAt: app.currentTaskId ? 
+                    app.tasks.find(t => t.id === app.currentTaskId).createdAt : 
+                    new Date().toISOString(),
+                subtasks: getSubtasks()
             };
             
-            todos.unshift(todo);
-            
-            if (!text) {
-                input.value = '';
-                input.focus();
-            }
-            
-            saveData();
-            renderTodos();
-            updateStats();
-            
-            if (recurring && notificationsEnabled) {
-                scheduleNotification(todo);
-            }
-        }
-
-        // Calculate next due date for recurring tasks
-        function calculateNextDue(recurring) {
-            const now = new Date();
-            const { interval, unit } = recurring;
-            
-            switch(unit) {
-                case 'minute':
-                    now.setMinutes(now.getMinutes() + interval);
-                    break;
-                case 'hour':
-                    now.setHours(now.getHours() + interval);
-                    break;
-                case 'day':
-                    now.setDate(now.getDate() + interval);
-                    break;
-                case 'week':
-                    now.setDate(now.getDate() + (interval * 7));
-                    break;
-                case 'month':
-                    now.setMonth(now.getMonth() + interval);
-                    break;
-            }
-            
-            return now.toISOString();
-        }
-
-        // Toggle todo completion
-        function toggleTodo(id) {
-            vibrate([10, 50, 10]);
-            
-            const todo = todos.find(t => t.id === id);
-            if (todo) {
-                todo.completed = !todo.completed;
-                
-                if (todo.completed && todo.recurring) {
-                    // Create new instance for recurring task
-                    const newTodo = {
-                        ...todo,
-                        id: Date.now(),
-                        completed: false,
-                        createdAt: new Date().toISOString(),
-                        nextDue: calculateNextDue(todo.recurring)
-                    };
-                    todos.unshift(newTodo);
-                    
-                    if (notificationsEnabled) {
-                        scheduleNotification(newTodo);
-                    }
-                }
-                
-                saveData();
-                renderTodos();
-                updateStats();
-            }
-        }
-
-        // Delete todo
-        function deleteTodo(id) {
-            vibrate([50]);
-            
-            todos = todos.filter(t => t.id !== id);
-            saveData();
-            renderTodos();
-            updateStats();
-        }
-
-        // Render todos
-        function renderTodos() {
-            const todoList = document.getElementById('todoList');
-            
-            if (todos.length === 0) {
-                todoList.innerHTML = `
-                    <div class="empty-state">
-                        <p>✨ No tasks yet. Add your first task!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            todoList.innerHTML = todos.map(todo => {
-                const createdDate = new Date(todo.createdAt);
-                const timeAgo = getTimeAgo(createdDate);
-                
-                return `
-                    <div class="todo-item ${todo.completed ? 'completed' : ''}">
-                        <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodo(${todo.id})"></div>
-                        <div class="todo-content">
-                            <div class="todo-text">${escapeHtml(todo.text)}</div>
-                            <div class="todo-meta">
-                                <span>⏰ ${timeAgo}</span>
-                                ${todo.recurring ? `<span>🔄 ${formatRecurring(todo.recurring)}</span>` : ''}
-                                ${todo.nextDue ? `<span>📅 Next: ${formatDate(todo.nextDue)}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="todo-actions">
-                            <button class="icon-button" onclick="deleteTodo(${todo.id})">🗑️</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Update statistics
-        function updateStats() {
-            document.getElementById('totalTasks').textContent = todos.length;
-            document.getElementById('completedTasks').textContent = todos.filter(t => t.completed).length;
-            document.getElementById('recurringTasks').textContent = todos.filter(t => t.recurring).length;
-        }
-
-        // Format recurring info
-        function formatRecurring(recurring) {
-            const { interval, unit } = recurring;
-            return `Every ${interval > 1 ? interval + ' ' : ''}${unit}${interval > 1 ? 's' : ''}`;
-        }
-
-        // Format date
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = date - now;
-            const diffMins = Math.round(diffMs / 60000);
-            
-            if (diffMins < 60) {
-                return `${diffMins} min`;
-            } else if (diffMins < 1440) {
-                return `${Math.round(diffMins / 60)} hours`;
-            } else {
-                return date.toLocaleDateString();
-            }
-        }
-
-        // Get time ago
-        function getTimeAgo(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.round(diffMs / 60000);
-            
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} min ago`;
-            if (diffMins < 1440) return `${Math.round(diffMins / 60)} hours ago`;
-            return `${Math.round(diffMins / 1440)} days ago`;
-        }
-
-        // Escape HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Toggle notifications
-        document.getElementById('notificationToggle').addEventListener('click', async function() {
-            vibrate();
-            
-            if (!notificationsEnabled) {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    notificationsEnabled = true;
-                    this.classList.add('active');
-                    new Notification('Todo Steroid', {
-                        body: 'Notifications enabled! You\'ll be reminded of your tasks.',
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✅</text></svg>'
-                    });
-                }
-            } else {
-                notificationsEnabled = false;
-                this.classList.remove('active');
-            }
-            
-            saveData();
-        });
-
-        // Schedule notification
-        function scheduleNotification(todo) {
-            if (!notificationsEnabled || !todo.nextDue) return;
-            
-            const notificationTime = parseInt(document.getElementById('notificationTime')?.value || 60) * 1000;
-            const dueDate = new Date(todo.nextDue);
-            const notifyAt = dueDate.getTime() - notificationTime;
-            const now = Date.now();
-            
-            if (notifyAt > now) {
-                setTimeout(() => {
-                    new Notification('Todo Reminder', {
-                        body: `📌 ${todo.text}`,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📌</text></svg>',
-                        requireInteraction: true,
-                        vibrate: [200, 100, 200]
-                    });
-                }, notifyAt - now);
-            }
-        }
-
-        // Check and reschedule recurring tasks
-        function checkRecurringTasks() {
-            todos.forEach(todo => {
-                if (todo.recurring && todo.nextDue) {
-                    const dueDate = new Date(todo.nextDue);
-                    if (dueDate <= new Date() && !todo.completed) {
-                        if (notificationsEnabled) {
-                            new Notification('Overdue Task', {
-                                body: `⚠️ ${todo.text}`,
-                                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>',
-                                requireInteraction: true
-                            });
-                        }
-                    } else if (notificationsEnabled) {
-                        scheduleNotification(todo);
-                    }
-                }
-            });
-        }
-
-        // Modal functions
-        function showRecurringModal() {
-            vibrate();
-            document.getElementById('recurringModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            vibrate();
-            document.getElementById('recurringModal').style.display = 'none';
-            document.getElementById('recurringTaskInput').value = '';
-            document.getElementById('customInterval').value = '';
-            selectedRecurring = null;
-            document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
-        }
-
-        function setRecurring(type) {
-            vibrate();
-            
-            document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            switch(type) {
-                case 'minute':
-                    selectedRecurring = { interval: 1, unit: 'minute' };
-                    break;
-                case 'hour':
-                    selectedRecurring = { interval: 1, unit: 'hour' };
-                    break;
-                case 'day':
-                    selectedRecurring = { interval: 1, unit: 'day' };
-                    break;
-                case 'week':
-                    selectedRecurring = { interval: 1, unit: 'week' };
-                    break;
-                case 'month':
-                    selectedRecurring = { interval: 1, unit: 'month' };
-                    break;
-            }
-        }
-
-        function createRecurringTask() {
-            const taskInput = document.getElementById('recurringTaskInput');
-            const customInterval = document.getElementById('customInterval');
-            const customUnit = document.getElementById('customUnit');
-            const notificationTime = document.getElementById('notificationTime');
-            
-            const taskText = taskInput.value.trim();
-            if (!taskText) {
-                vibrate([100, 50, 100]);
-                return;
-            }
-            
-            let recurring = selectedRecurring;
-            
-            if (customInterval.value) {
-                recurring = {
-                    interval: parseInt(customInterval.value),
-                    unit: customUnit.value,
-                    notificationTime: parseInt(notificationTime.value)
+            // Handle recurrence
+            if (enableRecurrence.checked) {
+                const activePreset = document.querySelector('.preset-btn.active');
+                taskData.recurrence = {
+                    enabled: true,
+                    pattern: activePreset ? activePreset.dataset.preset : 'custom',
+                    interval: parseInt(document.getElementById('recurrenceInterval').value),
+                    unit: document.getElementById('recurrenceUnit').value,
+                    endType: document.getElementById('recurrenceEnd').value,
+                    endAfter: document.getElementById('endAfterOccurrences').value,
+                    endOn: document.getElementById('endOnDate').value,
+                    weekdays: getSelectedWeekdays()
                 };
             }
             
-            if (!recurring) {
-                vibrate([100, 50, 100]);
+            if (app.currentTaskId) {
+                // Update existing task
+                const index = app.tasks.findIndex(t => t.id === app.currentTaskId);
+                app.tasks[index] = taskData;
+            } else {
+                // Add new task
+                app.tasks.push(taskData);
+                
+                // Create next occurrence if recurring
+                if (taskData.recurrence?.enabled) {
+                    scheduleNextOccurrence(taskData);
+                }
+            }
+            
+            saveData();
+            renderTasks();
+            updateStats();
+            closeTaskModal();
+            showNotification('Task saved successfully!', 'success');
+            
+            if (app.settings.hapticFeedback && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                app.tasks = app.tasks.filter(t => t.id !== taskId);
+                saveData();
+                renderTasks();
+                updateStats();
+                showNotification('Task deleted', 'info');
+                
+                if (app.settings.hapticFeedback && navigator.vibrate) {
+                    navigator.vibrate([50, 50, 50]);
+                }
+            }
+        }
+
+        function toggleTaskComplete(taskId) {
+            const task = app.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                task.completedAt = task.completed ? new Date().toISOString() : null;
+                
+                // Handle recurring task completion
+                if (task.completed && task.recurrence?.enabled) {
+                    createNextRecurrence(task);
+                }
+                
+                saveData();
+                renderTasks();
+                updateStats();
+                
+                if (app.settings.hapticFeedback && navigator.vibrate) {
+                    navigator.vibrate(30);
+                }
+            }
+        }
+
+        function toggleSubtaskComplete(taskId, subtaskIndex) {
+            const task = app.tasks.find(t => t.id === taskId);
+            if (task && task.subtasks[subtaskIndex]) {
+                task.subtasks[subtaskIndex].completed = !task.subtasks[subtaskIndex].completed;
+                saveData();
+                renderTasks();
+                
+                if (app.settings.hapticFeedback && navigator.vibrate) {
+                    navigator.vibrate(20);
+                }
+            }
+        }
+
+        // Rendering
+        function renderTasks() {
+            const filteredTasks = getFilteredTasks();
+            
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <div class="empty-state-title">No tasks found</div>
+                        <div class="empty-state-message">
+                            ${app.currentFilter === 'all' ? 'Tap the + button to create your first task' : 'Try changing the filter'}
+                        </div>
+                    </div>
+                `;
                 return;
             }
             
-            vibrate([50, 50, 50]);
-            addTodo(taskText, recurring);
-            closeModal();
+            taskList.innerHTML = filteredTasks.map(task => `
+                <div class="glass-card task-item ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
+                    <div class="task-checkbox ${task.completed ? 'checked' : ''}" onclick="toggleTaskComplete('${task.id}')"></div>
+                    <div class="task-content" onclick="openTaskModal('${task.id}')">
+                        <div class="task-title">${escapeHtml(task.title)}</div>
+                        <div class="task-meta">
+                            ${task.priority ? `<span class="task-priority priority-${task.priority}">${task.priority}</span>` : ''}
+                            ${task.dueDate ? `<span>📅 ${formatDate(task.dueDate)}</span>` : ''}
+                            ${task.recurrence?.enabled ? '<span>🔄 Recurring</span>' : ''}
+                        </div>
+                        ${task.subtasks?.length ? renderSubtasks(task) : ''}
+                    </div>
+                    <div class="swipe-actions">
+                        <button class="swipe-btn swipe-edit" onclick="openTaskModal('${task.id}')">Edit</button>
+                        <button class="swipe-btn swipe-delete" onclick="deleteTask('${task.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Setup swipe gestures
+            setupSwipeGestures();
         }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && document.activeElement.id === 'todoInput') {
-                addTodo();
+        function renderSubtasks(task) {
+            return `
+                <div class="subtasks-container">
+                    ${task.subtasks.map((subtask, index) => `
+                        <div class="subtask-item">
+                            <div class="subtask-checkbox ${subtask.completed ? 'checked' : ''}" 
+                                 onclick="event.stopPropagation(); toggleSubtaskComplete('${task.id}', ${index})"></div>
+                            <span>${escapeHtml(subtask.title)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Filtering and Search
+        function getFilteredTasks() {
+            let filtered = [...app.tasks];
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(task => 
+                    task.title.toLowerCase().includes(searchTerm) ||
+                    task.description.toLowerCase().includes(searchTerm)
+                );
             }
             
-            if (e.key === 'Escape') {
-                closeModal();
+            // Apply category filter
+            switch (app.currentFilter) {
+                case 'today':
+                    filtered = filtered.filter(task => {
+                        if (!task.dueDate) return false;
+                        const dueDate = new Date(task.dueDate);
+                        const today = new Date();
+                        return dueDate.toDateString() === today.toDateString();
+                    });
+                    break;
+                case 'upcoming':
+                    filtered = filtered.filter(task => {
+                        if (!task.dueDate) return false;
+                        return new Date(task.dueDate) > new Date();
+                    });
+                    break;
+                case 'completed':
+                    filtered = filtered.filter(task => task.completed);
+                    break;
+                case 'high':
+                    filtered = filtered.filter(task => task.priority === 'high' && !task.completed);
+                    break;
             }
-        });
-
-        // Click outside modal to close
-        document.getElementById('recurringModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
+            
+            // Apply focus mode
+            if (app.settings.focusMode) {
+                filtered = filtered.filter(task => !task.completed);
             }
-        });
-
-        // Service worker for offline support
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:text/javascript,' + encodeURIComponent(`
-                self.addEventListener('install', e => {
-                    self.skipWaiting();
-                });
+            
+            // Sort by priority and due date
+            filtered.sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 
-                self.addEventListener('activate', e => {
-                    e.waitUntil(clients.claim());
-                });
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                if (a.priority !== b.priority) {
+                    return priorityOrder[a.priority] - priorityOrder[b.priority];
+                }
                 
-                self.addEventListener('fetch', e => {
-                    e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
-                });
-            `));
+                if (a.dueDate && b.dueDate) {
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                }
+                
+                return 0;
+            });
+            
+            return filtered;
         }
 
-        // Initialize app
-        loadData();
-        
-        // Check recurring tasks every minute
-        setInterval(checkRecurringTasks, 60000);
+        function handleSearch() {
+            renderTasks();
+        }
+
+        function handleFilterClick(e) {
+            const filterBtn = e.target.closest('.filter-pill');
+            if (!filterBtn) return;
+            
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            filterBtn.classList.add('active');
+            app.currentFilter = filterBtn.dataset.filter;
+            renderTasks();
+        }
+
+        // Modals
+        function openTaskModal(taskId = null) {
+            app.currentTaskId = taskId;
+            const modalTitle = document.getElementById('modalTitle');
+            const submitBtnText = document.getElementById('submitBtnText');
+            
+            if (taskId) {
+                const task = app.tasks.find(t => t.id === taskId);
+                if (task) {
+                    modalTitle.textContent = 'Edit Task';
+                    submitBtnText.textContent = 'Update Task';
+                    
+                    // Fill form with task data
+                    document.getElementById('taskTitle').value = task.title;
+                    document.getElementById('taskDescription').value = task.description || '';
+                    document.getElementById('taskCategory').value = task.category;
+                    document.getElementById('taskPriority').value = task.priority;
+                    document.getElementById('taskDueDate').value = task.dueDate || '';
+                    
+                    // Handle recurrence
+                    if (task.recurrence?.enabled) {
+                        enableRecurrence.checked = true;
+                        recurrenceOptions.classList.add('active');
+                        
+                        // Set recurrence pattern
+                        const presetBtn = document.querySelector(`[data-preset="${task.recurrence.pattern}"]`);
+                        if (presetBtn) {
+                            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+                            presetBtn.classList.add('active');
+                        }
+                    }
+                    
+                    // Load subtasks
+                    if (task.subtasks?.length) {
+                        const subtasksList = document.getElementById('subtasksList');
+                        subtasksList.innerHTML = task.subtasks.map((subtask, index) => `
+                            <div class="form-group subtask-input-group">
+                                <input type="text" class="form-input" value="${escapeHtml(subtask.title)}" placeholder="Subtask ${index + 1}">
+                                <button type="button" class="btn btn-secondary" onclick="removeSubtask(this)">Remove</button>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } else {
+                modalTitle.textContent = 'New Task';
+                submitBtnText.textContent = 'Create Task';
+                taskForm.reset();
+                document.getElementById('subtasksList').innerHTML = '';
+                enableRecurrence.checked = false;
+                recurrenceOptions.classList.remove('active');
+            }
+            
+            taskModal.classList.add('active');
+        }
+
+        function closeTaskModal() {
+            taskModal.classList.remove('active');
+            taskForm.reset();
+            app.currentTaskId = null;
+        }
+
+        function closeSettingsModal() {
+            settingsModal.classList.remove('active');
+        }
+
+        // Navigation
+        function handleNavigation(e) {
+            const navItem = e.currentTarget;
+            const page = navItem.dataset.page;
+            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            navItem.classList.add('active');
+            
+            if (app.settings.hapticFeedback && navigator.vibrate) {
+                navigator.vibrate(20);
+            }
+            
+            switch (page) {
+                case 'tasks':
+                    // Already on tasks page
+                    break;
+                case 'calendar':
+                    showNotification('Calendar view coming soon!', 'info');
+                    break;
+                case 'stats':
+                    showNotification('Statistics view coming soon!', 'info');
+                    break;
+                case 'settings':
+                    settingsModal.classList.add('active');
+                    break;
+            }
+        }
+
+        // Recurrence
+        function toggleRecurrence(e) {
+            if (e.target.checked) {
+                recurrenceOptions.classList.add('active');
+            } else {
+                recurrenceOptions.classList.remove('active');
+            }
+        }
+
+        function handleRecurrencePreset(e) {
+            const preset = e.target.dataset.preset;
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            const advancedRecurrence = document.getElementById('advancedRecurrence');
+            const weekdaySelector = document.getElementById('weekdaySelector');
+            
+            if (preset === 'custom') {
+                advancedRecurrence.style.display = 'block';
+            } else {
+                advancedRecurrence.style.display = 'none';
+            }
+            
+            if (preset === 'weekdays') {
+                // Select Monday to Friday
+                document.querySelectorAll('.weekday-btn').forEach((btn, index) => {
+                    btn.classList.toggle('active', index >= 1 && index <= 5);
+                });
+            }
+        }
+
+        function handleRecurrenceEndChange(e) {
+            const endType = e.target.value;
+            document.getElementById('endAfterGroup').style.display = endType === 'after' ? 'block' : 'none';
+            document.getElementById('endOnGroup').style.display = endType === 'on' ? 'block' : 'none';
+        }
+
+        function handleRecurrenceUnitChange(e) {
+            const unit = e.target.value;
+            const weekdaySelector = document.getElementById('weekdaySelector');
+            weekdaySelector.style.display = unit === 'weeks' ? 'block' : 'none';
+        }
+
+        function toggleWeekday(e) {
+            e.target.classList.toggle('active');
+        }
+
+        function getSelectedWeekdays() {
+            return Array.from(document.querySelectorAll('.weekday-btn.active'))
+                .map(btn => parseInt(btn.dataset.day));
+        }
+
+        function createNextRecurrence(task) {
+            const nextTask = { ...task };
+            nextTask.id = generateId();
+            nextTask.completed = false;
+            nextTask.completedAt = null;
+            
+            // Calculate next due date based on recurrence pattern
+            if (task.recurrence) {
+                const pattern = task.recurrence.pattern;
+                const currentDue = new Date(task.dueDate || new Date());
+                let nextDue = new Date(currentDue);
+                
+                switch (pattern) {
+                    case 'daily':
+                        nextDue.setDate(nextDue.getDate() + 1);
+                        break;
+                    case 'weekly':
+                        nextDue.setDate(nextDue.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        nextDue.setMonth(nextDue.getMonth() + 1);
+                        break;
+                    case 'yearly':
+                        nextDue.setFullYear(nextDue.getFullYear() + 1);
+                        break;
+                    case 'weekdays':
+                        do {
+                            nextDue.setDate(nextDue.getDate() + 1);
+                        } while (nextDue.getDay() === 0 || nextDue.getDay() === 6);
+                        break;
+                    case 'custom':
+                        const interval = task.recurrence.interval;
+                        const unit = task.recurrence.unit;
+                        
+                        switch (unit) {
+                            case 'minutes':
+                                nextDue.setMinutes(nextDue.getMinutes() + interval);
+                                break;
+                            case 'hours':
+                                nextDue.setHours(nextDue.getHours() + interval);
+                                break;
+                            case 'days':
+                                nextDue.setDate(nextDue.getDate() + interval);
+                                break;
+                            case 'weeks':
+                                nextDue.setDate(nextDue.getDate() + (interval * 7));
+                                break;
+                            case 'months':
+                                nextDue.setMonth(nextDue.getMonth() + interval);
+                                break;
+                        }
+                        break;
+                }
+                
+                nextTask.dueDate = nextDue.toISOString().slice(0, 16);
+                
+                // Check end conditions
+                if (task.recurrence.endType === 'after') {
+                    // Implement occurrence counting
+                } else if (task.recurrence.endType === 'on') {
+                    if (new Date(nextTask.dueDate) > new Date(task.recurrence.endOn)) {
+                        return; // Don't create next occurrence
+                    }
+                }
+                
+                app.tasks.push(nextTask);
+                saveData();
+            }
+        }
+
+        // Subtasks
+        function addSubtask() {
+            const subtasksList = document.getElementById('subtasksList');
+            const subtaskIndex = subtasksList.children.length + 1;
+            
+            const subtaskGroup = document.createElement('div');
+            subtaskGroup.className = 'form-group subtask-input-group';
+            subtaskGroup.innerHTML = `
+                <input type="text" class="form-input" placeholder="Subtask ${subtaskIndex}">
+                <button type="button" class="btn btn-secondary" onclick="removeSubtask(this)">Remove</button>
+            `;
+            
+            subtasksList.appendChild(subtaskGroup);
+        }
+
+        function removeSubtask(button) {
+            button.parentElement.remove();
+        }
+
+        function getSubtasks() {
+            const subtaskInputs = document.querySelectorAll('#subtasksList input');
+            return Array.from(subtaskInputs)
+                .map(input => input.value.trim())
+                .filter(title => title)
+                .map(title => ({ title, completed: false }));
+        }
+
+        // Settings
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.body.setAttribute('data-theme', newTheme);
+            app.settings.theme = newTheme;
+            
+            if (newTheme === 'light') {
+                document.getElementById('themeIcon').textContent = '☀️';
+                document.getElementById('themeText').textContent = 'Light';
+            } else {
+                document.getElementById('themeIcon').textContent = '🌙';
+                document.getElementById('themeText').textContent = 'Dark';
+            }
+            
+            saveSettings();
+        }
+
+        function toggleFocusMode(e) {
+            app.settings.focusMode = e.target.checked;
+            document.body.classList.toggle('focus-mode', app.settings.focusMode);
+            saveSettings();
+            renderTasks();
+        }
+
+        function toggleNotifications(e) {
+            app.settings.notifications = e.target.checked;
+            
+            if (e.target.checked) {
+                requestNotificationPermission();
+            }
+            
+            saveSettings();
+        }
+
+        function toggleHapticFeedback(e) {
+            app.settings.hapticFeedback = e.target.checked;
+            saveSettings();
+            
+            if (e.target.checked && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        // Notifications
+        function setupNotifications() {
+            if ('Notification' in window && app.settings.notifications) {
+                setInterval(checkDueTasks, 60000); // Check every minute
+            }
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showNotification('Notifications enabled!', 'success');
+                    } else {
+                        app.settings.notifications = false;
+                        document.getElementById('enableNotifications').checked = false;
+                        saveSettings();
+                    }
+                });
+            }
+        }
+
+        function checkDueTasks() {
+            if (!app.settings.notifications || Notification.permission !== 'granted') return;
+            
+            const now = new Date();
+            const upcoming = app.tasks.filter(task => {
+                if (task.completed || !task.dueDate) return false;
+                
+                const dueDate = new Date(task.dueDate);
+                const timeDiff = dueDate - now;
+                
+                // Notify if due in next 15 minutes
+                return timeDiff > 0 && timeDiff <= 15 * 60 * 1000;
+            });
+            
+            upcoming.forEach(task => {
+                const notification = new Notification('Task Due Soon!', {
+                    body: task.title,
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png',
+                    tag: task.id,
+                    requireInteraction: true,
+                    actions: [
+                        { action: 'complete', title: 'Mark Complete' },
+                        { action: 'snooze', title: 'Snooze 15min' }
+                    ]
+                });
+                
+                notification.onclick = () => {
+                    window.focus();
+                    openTaskModal(task.id);
+                };
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span class="notification-icon">
+                        ${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}
+                    </span>
+                    <div class="notification-body">
+                        <div class="notification-message">${message}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Trigger reflow to enable transition
+            notification.offsetHeight;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Pull to Refresh
+        function setupPullToRefresh() {
+            let startY = 0;
+            let currentY = 0;
+            let pulling = false;
+            
+            document.addEventListener('touchstart', (e) => {
+                if (window.scrollY === 0) {
+                    startY = e.touches[0].clientY;
+                    pulling = true;
+                }
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (!pulling) return;
+                
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                
+                if (diff > 0 && diff < 150) {
+                    pullToRefresh.classList.add('pulling');
+                    pullToRefresh.style.transform = `translateX(-50%) translateY(${diff}px)`;
+                }
+            });
+            
+            document.addEventListener('touchend', () => {
+                if (!pulling) return;
+                
+                const diff = currentY - startY;
+                
+                if (diff > 100) {
+                    pullToRefresh.classList.add('refreshing');
+                    pullToRefresh.classList.remove('pulling');
+                    
+                    // Refresh data
+                    setTimeout(() => {
+                        renderTasks();
+                        updateStats();
+                        pullToRefresh.classList.remove('refreshing');
+                        pullToRefresh.style.transform = '';
+                        showNotification('Refreshed!', 'success');
+                    }, 1000);
+                } else {
+                    pullToRefresh.classList.remove('pulling');
+                    pullToRefresh.style.transform = '';
+                }
+                
+                pulling = false;
+                startY = 0;
+                currentY = 0;
+            });
+        }
+
+        // Swipe Gestures
+        function setupSwipeGestures() {
+            const taskItems = document.querySelectorAll('.task-item');
+            
+            taskItems.forEach(item => {
+                let startX = 0;
+                let currentX = 0;
+                let swiping = false;
+                
+                item.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    swiping = true;
+                });
+                
+                item.addEventListener('touchmove', (e) => {
+                    if (!swiping) return;
+                    
+                    currentX = e.touches[0].clientX;
+                    const diff = startX - currentX;
+                    
+                    if (diff > 0 && diff < 150) {
+                        item.style.transform = `translateX(-${diff}px)`;
+                    }
+                });
+                
+                item.addEventListener('touchend', () => {
+                    if (!swiping) return;
+                    
+                    const diff = startX - currentX;
+                    
+                    if (diff > 100) {
+                        item.classList.add('swiped');
+                        item.style.transform = 'translateX(-150px)';
+                    } else {
+                        item.style.transform = '';
+                    }
+                    
+                    swiping = false;
+                });
+            });
+        }
+
+        // Stats
+        function updateStats() {
+            const today = new Date().toDateString();
+            const totalTasks = app.tasks.length;
+            const completedToday = app.tasks.filter(task => 
+                task.completed && 
+                task.completedAt && 
+                new Date(task.completedAt).toDateString() === today
+            ).length;
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('completedToday').textContent = completedToday;
+            document.getElementById('streakDays').textContent = calculateStreak();
+        }
+
+        function calculateStreak() {
+            // Simple streak calculation - can be enhanced
+            const completedDates = app.tasks
+                .filter(task => task.completed && task.completedAt)
+                .map(task => new Date(task.completedAt).toDateString())
+                .filter((date, index, self) => self.indexOf(date) === index)
+                .sort((a, b) => new Date(b) - new Date(a));
+            
+            if (completedDates.length === 0) return 0;
+            
+            let streak = 0;
+            let currentDate = new Date();
+            
+            for (let i = 0; i < completedDates.length; i++) {
+                const checkDate = new Date(currentDate);
+                checkDate.setDate(checkDate.getDate() - i);
+                
+                if (completedDates.includes(checkDate.toDateString())) {
+                    streak++;
+                } else if (i > 0) {
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        // Data Management
+        function saveData() {
+            try {
+                localStorage.setItem('taskflow_tasks', JSON.stringify(app.tasks));
+            } catch (e) {
+                showNotification('Failed to save data', 'error');
+            }
+        }
+
+        function loadData() {
+            try {
+                const savedTasks = localStorage.getItem('taskflow_tasks');
+                if (savedTasks) {
+                    app.tasks = JSON.parse(savedTasks);
+                }
+                
+                const savedSettings = localStorage.getItem('taskflow_settings');
+                if (savedSettings) {
+                    app.settings = { ...app.settings, ...JSON.parse(savedSettings) };
+                }
+            } catch (e) {
+                showNotification('Failed to load data', 'error');
+            }
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('taskflow_settings', JSON.stringify(app.settings));
+            } catch (e) {
+                showNotification('Failed to save settings', 'error');
+            }
+        }
+
+        function exportData() {
+            const data = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                tasks: app.tasks,
+                settings: app.settings
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `taskflow_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully!', 'success');
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (data.tasks && Array.isArray(data.tasks)) {
+                        app.tasks = data.tasks;
+                        saveData();
+                    }
+                    
+                    if (data.settings) {
+                        app.settings = { ...app.settings, ...data.settings };
+                        saveSettings();
+                        
+                        // Apply imported theme
+                        if (app.settings.theme === 'light') {
+                            document.body.setAttribute('data-theme', 'light');
+                            document.getElementById('themeIcon').textContent = '☀️';
+                            document.getElementById('themeText').textContent = 'Light';
+                        }
+                    }
+                    
+                    renderTasks();
+                    updateStats();
+                    showNotification('Data imported successfully!', 'success');
+                } catch (error) {
+                    showNotification('Failed to import data', 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to delete all data? This cannot be undone.')) {
+                app.tasks = [];
+                saveData();
+                renderTasks();
+                updateStats();
+                showNotification('All data cleared', 'info');
+            }
+        }
+
+        // Keyboard Shortcuts
+        function handleKeyboardShortcuts(e) {
+            // Ctrl/Cmd + N: New task
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                openTaskModal();
+            }
+            
+            // Escape: Close modals
+            if (e.key === 'Escape') {
+                if (taskModal.classList.contains('active')) {
+                    closeTaskModal();
+                } else if (settingsModal.classList.contains('active')) {
+                    closeSettingsModal();
+                }
+            }
+        }
+
+        // Utility Functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = date - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Tomorrow';
+            if (diffDays === -1) return 'Yesterday';
+            if (diffDays > 0 && diffDays <= 7) return `In ${diffDays} days`;
+            
+            return date.toLocaleDateString();
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Initialize the app
+        init();
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(registration => {
+                console.log('ServiceWorker registered:', registration);
+            }).catch(error => {
+                console.error('ServiceWorker registration failed:', error);
+            });
+        }
     </script>
 </body>
 </html>
